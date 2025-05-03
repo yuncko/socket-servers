@@ -1,11 +1,10 @@
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
+const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
-
-// تفعيل socket.io مع السماح لكل المواقع بالاتصال
 const io = new Server(server, {
   cors: {
     origin: '*',
@@ -13,12 +12,17 @@ const io = new Server(server, {
   }
 });
 
-io.on('connection', (socket) => {
+app.use(express.static(path.join(__dirname, 'public')));
+
+io.on('connection', socket => {
   console.log('User connected:', socket.id);
 
-  socket.on('message', (msg) => {
-    console.log('Received message:', msg);
-    socket.broadcast.emit('message', msg); // يرسل الرسالة لكل المستخدمين الآخرين
+  socket.on('message', msg => {
+    socket.broadcast.emit('message', msg);
+  });
+
+  socket.on('signal', data => {
+    socket.broadcast.emit('signal', data);
   });
 
   socket.on('disconnect', () => {
@@ -26,7 +30,6 @@ io.on('connection', (socket) => {
   });
 });
 
-// استماع على البورت الذي توفره Render أو بورت 3000 محليًا
 server.listen(process.env.PORT || 3000, () => {
-  console.log('Socket.io server is running...');
+  console.log('Server running');
 });
